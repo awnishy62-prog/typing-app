@@ -132,6 +132,58 @@ node web2apk.js getapp
 - GitHub Actions handles everything: Node.js, Android SDK, Java, and APK building
 - Works on any operating system (Windows, Mac, Linux)
 
+### **For `web2apk getapp` Command (Optional but Recommended):**
+- **GitHub CLI** - For automatic APK downloads and status checking
+
+#### **Installing GitHub CLI:**
+
+**Windows:**
+```bash
+# Method 1: Using winget (recommended)
+winget install GitHub.cli
+
+# Method 2: Using our installer
+install-gh-cli.bat
+
+# Method 3: Manual download
+# Go to: https://cli.github.com/
+```
+
+**Mac:**
+```bash
+# Method 1: Using Homebrew (recommended)
+brew install gh
+
+# Method 2: Using our installer
+chmod +x install-gh-cli.sh
+./install-gh-cli.sh
+
+# Method 3: Manual download
+# Go to: https://cli.github.com/
+```
+
+**Linux:**
+```bash
+# Method 1: Using apt (Ubuntu/Debian)
+sudo apt update && sudo apt install gh
+
+# Method 2: Using our installer
+chmod +x install-gh-cli.sh
+./install-gh-cli.sh
+
+# Method 3: Manual download
+# Go to: https://cli.github.com/
+```
+
+**After Installation:**
+```bash
+# Authenticate with GitHub
+gh auth login
+
+# Test the connection
+gh auth status
+```
+
 ## 🛠️ GitHub Actions Workflows
 
 | Workflow | Trigger | Description |

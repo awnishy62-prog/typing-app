@@ -50,8 +50,23 @@ async function getApp() {
     
     spinner.text = 'Fetching latest workflow status...';
     
-    // Check latest workflow run
-    const workflowStatus = await getWorkflowStatus(owner, repoName);
+    // Try GitHub CLI first, then fallback to manual instructions
+    let workflowStatus;
+    try {
+      workflowStatus = await getWorkflowStatus(owner, repoName);
+    } catch (error) {
+      spinner.fail(chalk.red('GitHub CLI Error: ' + error.message));
+      console.log('');
+      console.log(chalk.yellow('💡 Alternative: Manual Download'));
+      console.log(chalk.blue('1. Go to: https://github.com/' + owner + '/' + repoName + '/actions'));
+      console.log(chalk.blue('2. Click on the latest workflow run'));
+      console.log(chalk.blue('3. Download the APK artifact from the "Artifacts" section'));
+      console.log('');
+      console.log(chalk.cyan('🔧 To fix GitHub CLI:'));
+      console.log(chalk.white('   Install: winget install GitHub.cli'));
+      console.log(chalk.white('   Login: gh auth login'));
+      return;
+    }
     
     if (workflowStatus.status === 'completed' && workflowStatus.conclusion === 'success') {
       spinner.succeed(chalk.green('✅ Latest build completed successfully!'));
@@ -81,6 +96,24 @@ async function getApp() {
 
 async function getWorkflowStatus(owner, repo) {
   try {
+    // Check if GitHub CLI is installed
+    try {
+      execSync('gh --version', { stdio: 'pipe' });
+    } catch (ghError) {
+      throw new Error('GitHub CLI is not installed. Please install it first:\n' +
+        'Windows: winget install GitHub.cli\n' +
+        'Mac: brew install gh\n' +
+        'Linux: sudo apt install gh\n' +
+        'Then run: gh auth login');
+    }
+
+    // Check if authenticated
+    try {
+      execSync('gh auth status', { stdio: 'pipe' });
+    } catch (authError) {
+      throw new Error('GitHub CLI is not authenticated. Please run:\ngh auth login');
+    }
+
     // Use GitHub CLI to get workflow runs
     const output = execSync(`gh run list --repo ${owner}/${repo} --limit 1 --json status,conclusion,number,url`, { 
       encoding: 'utf8',
@@ -103,6 +136,9 @@ async function getWorkflowStatus(owner, repo) {
     };
     
   } catch (error) {
+    if (error.message.includes('GitHub CLI is not installed') || error.message.includes('not authenticated')) {
+      throw error;
+    }
     throw new Error('Failed to get workflow status. Make sure you have GitHub CLI installed and are authenticated.');
   }
 }
