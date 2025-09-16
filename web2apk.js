@@ -183,16 +183,39 @@ async function downloadAPK(owner, repo, runId, ghCommand = 'gh') {
       stdio: 'pipe' 
     });
     
-    // Find the APK file
+    // Find the APK file (check both direct files and subdirectories)
     const files = await fs.readdir(downloadsDir);
-    const apkFile = files.find(file => file.endsWith('.apk'));
+    let apkFile = null;
+    let apkPath = null;
     
+    // First check for direct APK files
+    apkFile = files.find(file => file.endsWith('.apk'));
     if (apkFile) {
+      apkPath = path.join(downloadsDir, apkFile);
+    } else {
+      // Check subdirectories for APK files
+      for (const file of files) {
+        const filePath = path.join(downloadsDir, file);
+        const stat = await fs.stat(filePath);
+        if (stat.isDirectory()) {
+          const subFiles = await fs.readdir(filePath);
+          const subApkFile = subFiles.find(subFile => subFile.endsWith('.apk'));
+          if (subApkFile) {
+            apkFile = subApkFile;
+            apkPath = path.join(filePath, subApkFile);
+            break;
+          }
+        }
+      }
+    }
+    
+    if (apkFile && apkPath) {
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
       const newName = `app-${timestamp}.apk`;
       const newPath = path.join(downloadsDir, newName);
       
-      await fs.move(path.join(downloadsDir, apkFile), newPath);
+      // Copy instead of move to avoid conflicts
+      await fs.copy(apkPath, newPath);
       
       spinner.succeed(chalk.green(`✅ APK downloaded successfully!`));
       console.log(chalk.blue(`📱 APK saved to: ${newPath}`));
