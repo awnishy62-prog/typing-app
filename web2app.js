@@ -452,6 +452,19 @@ async function customizeAppSettings() {
 
   await fs.writeJson('apk-config.json', config, { spaces: 2 });
   console.log(chalk.green('✅ App configuration saved!'));
+  
+  // Show summary of what user entered
+  console.log(chalk.blue('\n📋 Your App Configuration Summary:'));
+  console.log(chalk.cyan(`📱 App Name: ${appName}`));
+  console.log(chalk.cyan(`🆔 App ID: ${appId}`));
+  console.log(chalk.cyan(`📦 Version: ${version}`));
+  console.log(chalk.cyan(`📝 Description: ${description}`));
+  console.log(chalk.yellow('\n🔄 What happens next:'));
+  console.log(chalk.white('1. 📤 Push your files to GitHub'));
+  console.log(chalk.white('2. 🏗️  GitHub Actions will build your APK'));
+  console.log(chalk.white('3. ⏳ Wait for build completion (5-15 minutes)'));
+  console.log(chalk.white('4. 📥 Download your APK automatically'));
+  console.log(chalk.white('5. 📱 Install APK on your Android device'));
 }
 
 async function pushToGitHub(ghCommand = null) {
