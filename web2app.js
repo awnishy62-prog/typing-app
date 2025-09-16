@@ -455,10 +455,14 @@ async function pushToGitHub(ghCommand = null) {
       try {
         execSync(`${actualGhCommand} repo view ${username}/${cleanRepoName}`, { stdio: 'pipe' });
         
-        // Repository exists, check if it has files
+        // Repository exists, check if it has files (with timeout)
         spinner.text = 'Checking for existing files in repository...';
         try {
-          const filesOutput = execSync(`git ls-remote --heads origin main`, { stdio: 'pipe' });
+          // Use a timeout for the git ls-remote command
+          const filesOutput = execSync(`git ls-remote --heads origin main`, { 
+            stdio: 'pipe',
+            timeout: 10000 // 10 second timeout
+          });
           if (filesOutput.toString().trim()) {
             // Repository has files, we need to force push or handle existing files
             console.log(chalk.yellow('\n⚠️  Repository already has files.'));
@@ -481,24 +485,53 @@ async function pushToGitHub(ghCommand = null) {
             }
           }
         } catch (e) {
-          // Repository exists but no main branch yet, proceed normally
+          // Repository exists but no main branch yet, or timeout occurred
+          console.log(chalk.gray('📝 Repository exists but no main branch found, proceeding with normal push...'));
         }
       } catch (repoError) {
         // Repository doesn't exist, create it
         spinner.text = 'Creating GitHub repository...';
         
         try {
-          execSync(`${actualGhCommand} repo create ${cleanRepoName} --public --source=. --remote=origin --push`, { stdio: 'pipe' });
+          // First, remove existing remote if it exists
+          try {
+            execSync('git remote remove origin', { stdio: 'pipe' });
+          } catch (e) {
+            // Remote doesn't exist, that's fine
+          }
+          
+          // Create repository without --remote=origin to avoid conflicts
+          execSync(`${actualGhCommand} repo create ${cleanRepoName} --public --source=. --push`, { stdio: 'pipe' });
           spinner.succeed(chalk.green('✅ Created GitHub repository and pushed successfully!'));
           console.log(chalk.blue('🔄 GitHub Actions is now building your APK...'));
           return;
         } catch (createError) {
-          spinner.fail(chalk.red('❌ Failed to create repository: ' + createError.message));
-          console.log(chalk.yellow('💡 Please create the repository manually on GitHub and try again.'));
-          console.log(chalk.blue(`🔗 Go to: https://github.com/new`));
-          console.log(chalk.blue(`📝 Repository name: ${cleanRepoName}`));
-          console.log(chalk.yellow(`🔧 GitHub CLI command used: ${actualGhCommand}`));
-          throw createError;
+          // If the above fails, try a different approach
+          try {
+            console.log(chalk.yellow('🔄 Trying alternative repository creation method...'));
+            
+            // Create repository without source
+            execSync(`${actualGhCommand} repo create ${cleanRepoName} --public`, { stdio: 'pipe' });
+            
+            // Add remote manually
+            execSync(`git remote add origin https://github.com/${username}/${cleanRepoName}.git`, { stdio: 'pipe' });
+            
+            // Push manually
+            execSync('git add .', { stdio: 'pipe' });
+            execSync('git commit -m "Initial commit: Convert website to Android app"', { stdio: 'pipe' });
+            execSync('git push origin main', { stdio: 'pipe' });
+            
+            spinner.succeed(chalk.green('✅ Created GitHub repository and pushed successfully!'));
+            console.log(chalk.blue('🔄 GitHub Actions is now building your APK...'));
+            return;
+          } catch (altError) {
+            spinner.fail(chalk.red('❌ Failed to create repository: ' + createError.message));
+            console.log(chalk.yellow('💡 Please create the repository manually on GitHub and try again.'));
+            console.log(chalk.blue(`🔗 Go to: https://github.com/new`));
+            console.log(chalk.blue(`📝 Repository name: ${cleanRepoName}`));
+            console.log(chalk.yellow(`🔧 GitHub CLI command used: ${actualGhCommand}`));
+            throw createError;
+          }
         }
       }
     }

@@ -837,6 +837,65 @@ git push origin main --force
 git push origin main
 ```
 
+### **Problem 15: "Checking for existing files" takes too long** ⏰
+
+**What you see:**
+```
+⠦ Checking for existing files in repository...
+# Hangs for a long time
+```
+
+**Solution:** Network timeout or repository access issue! 🌐
+
+**What happens automatically:**
+- ✅ **10-second timeout** added to prevent hanging
+- ✅ **Continues with normal push** if timeout occurs
+- ✅ **Shows helpful message** about proceeding
+
+**If it still hangs:**
+1. **Check your internet connection**
+2. **Try again** - it might be a temporary network issue
+3. **Use manual method** below
+
+**Manual fix:**
+```bash
+# Skip the check and push directly:
+git add .
+git commit -m "Update website files"
+git push origin main --force
+```
+
+### **Problem 16: "Unable to add remote 'origin'"** ❌
+
+**What you see:**
+```
+❌ Failed to create repository: Command failed: gh repo create...
+X Unable to add remote "origin"
+```
+
+**Solution:** Remote origin conflict! 🔧
+
+**What happens automatically:**
+- ✅ **Removes existing remote** before creating repository
+- ✅ **Tries alternative method** if first attempt fails
+- ✅ **Creates repository step by step** to avoid conflicts
+
+**Alternative methods:**
+1. **Automatic fallback** - Tool tries different creation methods
+2. **Manual creation** - Create repository on GitHub.com first
+3. **Clean start** - Remove existing git remote manually
+
+**Manual fix:**
+```bash
+# Remove existing remote:
+git remote remove origin
+
+# Create repository manually on GitHub.com
+# Then add remote and push:
+git remote add origin https://github.com/username/reponame.git
+git push origin main
+```
+
 ## 🎨 Making Your App Look Amazing
 
 ### **Custom App Icon** 🖼️
