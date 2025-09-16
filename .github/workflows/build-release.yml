@@ -37,6 +37,9 @@ jobs:
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
       
+    - name: Run setup
+      run: npm run setup
+      
     - name: Cache Gradle packages
       uses: actions/cache@v3
       with:
@@ -49,9 +52,6 @@ jobs:
           
     - name: Make gradlew executable
       run: chmod +x android/gradlew
-      
-    - name: Run setup
-      run: npm run setup
       
     - name: Generate keystore
       run: |
