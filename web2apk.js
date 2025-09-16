@@ -63,8 +63,9 @@ async function getApp() {
       console.log(chalk.blue('3. Download the APK artifact from the "Artifacts" section'));
       console.log('');
       console.log(chalk.cyan('🔧 To fix GitHub CLI:'));
-      console.log(chalk.white('   Install: winget install GitHub.cli'));
-      console.log(chalk.white('   Login: gh auth login'));
+      console.log(chalk.white('   1. Restart your terminal/command prompt'));
+      console.log(chalk.white('   2. Run: gh auth login'));
+      console.log(chalk.white('   3. Or test with: test-gh-cli.bat'));
       return;
     }
     
@@ -100,11 +101,32 @@ async function getWorkflowStatus(owner, repo) {
     try {
       execSync('gh --version', { stdio: 'pipe' });
     } catch (ghError) {
-      throw new Error('GitHub CLI is not installed. Please install it first:\n' +
-        'Windows: winget install GitHub.cli\n' +
-        'Mac: brew install gh\n' +
-        'Linux: sudo apt install gh\n' +
-        'Then run: gh auth login');
+      // Check if it might be installed but not in PATH
+      const possiblePaths = [
+        'C:\\Program Files\\GitHub CLI\\gh.exe',
+        'C:\\Program Files (x86)\\GitHub CLI\\gh.exe',
+        '/usr/local/bin/gh',
+        '/usr/bin/gh'
+      ];
+      
+      let ghFound = false;
+      for (const path of possiblePaths) {
+        try {
+          execSync(`"${path}" --version`, { stdio: 'pipe' });
+          ghFound = true;
+          break;
+        } catch (e) {
+          // Continue checking other paths
+        }
+      }
+      
+      if (!ghFound) {
+        throw new Error('GitHub CLI is not installed or not in PATH. Please install it first:\n' +
+          'Windows: winget install GitHub.cli\n' +
+          'Mac: brew install gh\n' +
+          'Linux: sudo apt install gh\n' +
+          'Then restart your terminal and run: gh auth login');
+      }
     }
 
     // Check if authenticated
