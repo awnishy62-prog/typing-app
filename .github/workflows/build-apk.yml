@@ -33,8 +33,24 @@ jobs:
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
       
-    - name: Run setup
-      run: npm run setup
+    - name: Setup Capacitor
+      run: |
+        # Create dist directory and copy files
+        mkdir -p dist
+        cp index.html dist/ 2>/dev/null || echo "index.html not found"
+        cp style.css dist/ 2>/dev/null || echo "style.css not found"
+        cp script.js dist/ 2>/dev/null || echo "script.js not found"
+        cp manifest.json dist/ 2>/dev/null || echo "manifest.json not found"
+        cp sw.js dist/ 2>/dev/null || echo "sw.js not found"
+        
+        # Initialize Capacitor
+        npx cap init "Web2App" "com.example.web2app" || echo "Capacitor already initialized"
+        
+        # Add Android platform
+        npx cap add android || echo "Android platform already exists"
+        
+        # Sync files
+        npx cap sync
       
     - name: Cache Gradle packages
       uses: actions/cache@v3
@@ -50,10 +66,16 @@ jobs:
       run: chmod +x android/gradlew
       
     - name: Build APK
-      run: npm run buildapk
+      run: |
+        cd android
+        ./gradlew assembleDebug
       env:
         ANDROID_HOME: ${{ env.ANDROID_HOME }}
         ANDROID_SDK_ROOT: ${{ env.ANDROID_SDK_ROOT }}
+        
+    - name: Copy APK to root
+      run: |
+        cp android/app/build/outputs/apk/debug/app-debug.apk app-debug.apk
         
     - name: Upload APK artifact
       uses: actions/upload-artifact@v4

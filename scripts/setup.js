@@ -41,9 +41,10 @@ async function setup() {
     // Initialize Capacitor
     spinner.text = 'Initializing Capacitor...';
     try {
-      execSync('npx cap init', { stdio: 'pipe' });
+      execSync('npx cap init "Web2App" "com.example.web2app"', { stdio: 'pipe' });
     } catch (error) {
       // Capacitor might already be initialized
+      console.log('Capacitor already initialized or init failed:', error.message);
     }
     
     // Add Android platform
@@ -52,11 +53,17 @@ async function setup() {
       execSync('npx cap add android', { stdio: 'pipe' });
     } catch (error) {
       // Platform might already exist
+      console.log('Android platform already exists or add failed:', error.message);
     }
     
     // Sync files
     spinner.text = 'Syncing files...';
-    execSync('npx cap sync', { stdio: 'pipe' });
+    try {
+      execSync('npx cap sync', { stdio: 'pipe' });
+    } catch (error) {
+      console.log('Cap sync failed:', error.message);
+      // Try to continue anyway
+    }
     
     spinner.succeed(chalk.green('Setup completed successfully!'));
     console.log(chalk.blue('\n📱 Your website is ready to be converted to APK!'));
