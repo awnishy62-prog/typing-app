@@ -440,55 +440,81 @@ async function pushToGitHub(ghCommand = null) {
   const actualGhCommand = ghCommand || getGitHubCLICommand();
   console.log(chalk.gray(`🔧 Using GitHub CLI: ${actualGhCommand}`));
   
-  const spinner = ora('Adding files to Git...').start();
+  const spinner = ora('Checking repository status...').start();
   
   try {
-    // Add all files
-    execSync('git add .', { stdio: 'pipe' });
-    spinner.text = 'Committing changes...';
+    // Check if repository exists and has files
+    const remoteUrl = execSync('git remote get-url origin', { encoding: 'utf8' }).trim();
+    const repoMatch = remoteUrl.match(/github\.com[:/]([^/]+)\/([^/]+?)(?:\.git)?$/);
     
-    // Commit
-    execSync('git commit -m "Initial commit: Convert website to Android app"', { stdio: 'pipe' });
-    spinner.text = 'Pushing to GitHub...';
-    
-    // Try to push
-    try {
-      execSync('git push origin main', { stdio: 'pipe' });
-      spinner.succeed(chalk.green('✅ Successfully pushed to GitHub!'));
-      console.log(chalk.blue('🔄 GitHub Actions is now building your APK...'));
-    } catch (pushError) {
-      // If push fails, try to create the repository
-      if (pushError.message.includes('Repository not found') || pushError.message.includes('remote: Repository not found')) {
+    if (repoMatch) {
+      const [, username, repoName] = repoMatch;
+      const cleanRepoName = repoName.replace('.git', '');
+      
+      // Check if repository exists
+      try {
+        execSync(`${actualGhCommand} repo view ${username}/${cleanRepoName}`, { stdio: 'pipe' });
+        
+        // Repository exists, check if it has files
+        spinner.text = 'Checking for existing files in repository...';
+        try {
+          const filesOutput = execSync(`git ls-remote --heads origin main`, { stdio: 'pipe' });
+          if (filesOutput.toString().trim()) {
+            // Repository has files, we need to force push or handle existing files
+            console.log(chalk.yellow('\n⚠️  Repository already has files.'));
+            const replaceChoice = await askQuestion('Do you want to replace all existing files? (y/n): ');
+            
+            if (replaceChoice.toLowerCase() === 'y' || replaceChoice.toLowerCase() === 'yes') {
+              console.log(chalk.blue('🗑️  Replacing all existing files...'));
+              
+              // Force push to replace all files
+              spinner.text = 'Force pushing to replace all files...';
+              execSync('git add .', { stdio: 'pipe' });
+              execSync('git commit -m "Update: Replace all files with new website"', { stdio: 'pipe' });
+              execSync('git push origin main --force', { stdio: 'pipe' });
+              
+              spinner.succeed(chalk.green('✅ Successfully replaced all files in repository!'));
+              console.log(chalk.blue('🔄 GitHub Actions is now building your APK...'));
+              return;
+            } else {
+              console.log(chalk.blue('📁 Keeping existing files, adding new ones...'));
+            }
+          }
+        } catch (e) {
+          // Repository exists but no main branch yet, proceed normally
+        }
+      } catch (repoError) {
+        // Repository doesn't exist, create it
         spinner.text = 'Creating GitHub repository...';
         
-        // Get repository info from git remote
-        const remoteUrl = execSync('git remote get-url origin', { encoding: 'utf8' }).trim();
-        const repoMatch = remoteUrl.match(/github\.com[:/]([^/]+)\/([^/]+?)(?:\.git)?$/);
-        
-        if (repoMatch) {
-          const [, username, repoName] = repoMatch;
-          const cleanRepoName = repoName.replace('.git', '');
-          
-          try {
-            // Create repository using GitHub CLI with the correct command
-            execSync(`${actualGhCommand} repo create ${cleanRepoName} --public --source=. --remote=origin --push`, { stdio: 'pipe' });
-            spinner.succeed(chalk.green('✅ Created GitHub repository and pushed successfully!'));
-            console.log(chalk.blue('🔄 GitHub Actions is now building your APK...'));
-          } catch (createError) {
-            spinner.fail(chalk.red('❌ Failed to create repository: ' + createError.message));
-            console.log(chalk.yellow('💡 Please create the repository manually on GitHub and try again.'));
-            console.log(chalk.blue(`🔗 Go to: https://github.com/new`));
-            console.log(chalk.blue(`📝 Repository name: ${cleanRepoName}`));
-            console.log(chalk.yellow(`🔧 GitHub CLI command used: ${actualGhCommand}`));
-            throw createError;
-          }
-        } else {
-          throw pushError;
+        try {
+          execSync(`${actualGhCommand} repo create ${cleanRepoName} --public --source=. --remote=origin --push`, { stdio: 'pipe' });
+          spinner.succeed(chalk.green('✅ Created GitHub repository and pushed successfully!'));
+          console.log(chalk.blue('🔄 GitHub Actions is now building your APK...'));
+          return;
+        } catch (createError) {
+          spinner.fail(chalk.red('❌ Failed to create repository: ' + createError.message));
+          console.log(chalk.yellow('💡 Please create the repository manually on GitHub and try again.'));
+          console.log(chalk.blue(`🔗 Go to: https://github.com/new`));
+          console.log(chalk.blue(`📝 Repository name: ${cleanRepoName}`));
+          console.log(chalk.yellow(`🔧 GitHub CLI command used: ${actualGhCommand}`));
+          throw createError;
         }
-      } else {
-        throw pushError;
       }
     }
+    
+    // Normal push process
+    spinner.text = 'Adding files to Git...';
+    execSync('git add .', { stdio: 'pipe' });
+    
+    spinner.text = 'Committing changes...';
+    execSync('git commit -m "Initial commit: Convert website to Android app"', { stdio: 'pipe' });
+    
+    spinner.text = 'Pushing to GitHub...';
+    execSync('git push origin main', { stdio: 'pipe' });
+    
+    spinner.succeed(chalk.green('✅ Successfully pushed to GitHub!'));
+    console.log(chalk.blue('🔄 GitHub Actions is now building your APK...'));
     
   } catch (error) {
     spinner.fail(chalk.red('❌ Failed to push to GitHub: ' + error.message));

@@ -791,6 +791,52 @@ git push origin main
 git push origin main
 ```
 
+### **Problem 14: "Repository already has files"** ❌
+
+**What you see:**
+```
+⚠️  Repository already has files.
+Do you want to replace all existing files? (y/n):
+```
+
+**Solution:** The repository already has files from a previous run! 🔄
+
+**What happens automatically:**
+- ✅ **Detects existing files** in the GitHub repository
+- ✅ **Asks for confirmation** before replacing files
+- ✅ **Force pushes** to replace all existing files
+- ✅ **Preserves your choice** for future runs
+
+**Options:**
+1. **Type 'y' or 'yes'** - Replace all existing files with new ones
+2. **Type 'n' or 'no'** - Keep existing files and add new ones
+
+**What happens when you choose 'y':**
+```bash
+🗑️  Replacing all existing files...
+Force pushing to replace all files...
+✅ Successfully replaced all files in repository!
+🔄 GitHub Actions is now building your APK...
+```
+
+**What happens when you choose 'n':**
+```bash
+📁 Keeping existing files, adding new ones...
+Adding files to Git...
+Committing changes...
+Pushing to GitHub...
+✅ Successfully pushed to GitHub!
+```
+
+**Manual control:**
+```bash
+# Force replace all files:
+git push origin main --force
+
+# Or keep existing files:
+git push origin main
+```
+
 ## 🎨 Making Your App Look Amazing
 
 ### **Custom App Icon** 🖼️
