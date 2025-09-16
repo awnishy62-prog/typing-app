@@ -16,13 +16,48 @@ Convert your HTML/CSS/JavaScript website into an Android APK with just one comma
 
 ## 🚀 Quick Start (GitHub Actions Only!)
 
+### **Option 1: Automated Setup (Recommended)**
+
+**For Windows:**
+```bash
+git clone https://github.com/AshishY794/web2appA.git
+cd web2appA
+complete-setup.bat
+```
+
+**For Mac/Linux:**
+```bash
+git clone https://github.com/AshishY794/web2appA.git
+cd web2appA
+chmod +x complete-setup.sh
+./complete-setup.sh
+```
+
+The setup script will:
+- ✅ Check VS Code installation
+- ✅ Check GitHub CLI authentication
+- ✅ Guide you through login if needed
+- ✅ Open VS Code for easy editing
+- ✅ Show you the complete workflow
+
+### **Option 2: Manual Setup**
+
 ### **Step 1: Clone This Repository**
 ```bash
 git clone https://github.com/AshishY794/web2appA.git
 cd web2appA
 ```
 
-### **Step 2: Add Your Website Files**
+### **Step 2: Check GitHub Authentication**
+```bash
+# Check if you're logged in
+gh auth status
+
+# If not logged in, login
+gh auth login
+```
+
+### **Step 3: Add Your Website Files**
 Place your complete website project in the `www` folder:
 ```bash
 # Copy your entire website project to the www folder
@@ -35,7 +70,7 @@ cp -r /path/to/your/website/* www/
 - `script.js` (optional)
 - Any other assets (images, fonts, etc.)
 
-### **Step 3: Remove Current Git and Add Your Remote**
+### **Step 4: Remove Current Git and Add Your Remote**
 ```bash
 # Remove current git remote
 git remote remove origin
@@ -44,14 +79,14 @@ git remote remove origin
 git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPO_NAME.git
 ```
 
-### **Step 4: Commit and Push**
+### **Step 5: Commit and Push**
 ```bash
 git add .
 git commit -m "Add my website project"
 git push origin main
 ```
 
-### **Step 5: Download Your APK**
+### **Step 6: Download Your APK**
 - **Automatic**: GitHub Actions builds your APK automatically!
 - **Download**: Go to Actions tab → Latest workflow → Download APK artifact
 - **Releases**: Check the Releases page for automatic releases

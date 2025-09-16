@@ -13,6 +13,43 @@ if [ ! -d "www" ]; then
     exit 1
 fi
 
+# Check if user is logged into GitHub
+echo "🔐 Checking GitHub authentication..."
+if ! gh auth status >/dev/null 2>&1; then
+    echo "❌ You are not logged into GitHub CLI"
+    echo ""
+    echo "📋 GitHub Login Steps:"
+    echo "1. Install GitHub CLI if not installed:"
+    echo "   - Windows: winget install GitHub.cli"
+    echo "   - Mac: brew install gh"
+    echo "   - Linux: sudo apt install gh"
+    echo ""
+    echo "2. Login to GitHub:"
+    echo "   gh auth login"
+    echo ""
+    echo "3. Follow the prompts to authenticate"
+    echo ""
+    read -p "Do you want to login to GitHub now? (y/n): " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        echo "🔑 Starting GitHub authentication..."
+        gh auth login
+        if [ $? -eq 0 ]; then
+            echo "✅ Successfully logged into GitHub!"
+        else
+            echo "❌ GitHub login failed. Please try again."
+            exit 1
+        fi
+    else
+        echo "⚠️  You need to login to GitHub to create releases and push code."
+        echo "   Run 'gh auth login' when you're ready."
+    fi
+else
+    echo "✅ You are logged into GitHub CLI"
+    gh auth status
+fi
+echo ""
+
 echo "📁 Current project structure:"
 echo "   - www/ (your website files go here)"
 echo "   - .github/ (GitHub Actions workflows)"
