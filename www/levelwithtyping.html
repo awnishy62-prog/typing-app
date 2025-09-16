@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Typing Trainer</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #eef3f8;
+      color: #333;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    header {
+      width: 100%;
+      background: #fff;
+      padding: 15px 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 1.2rem;
+    }
+    .nav-links {
+      display: flex;
+      gap: 20px;
+    }
+    .nav-links a {
+      text-decoration: none;
+      color: #007bff;
+      font-weight: bold;
+    }
+    .nav-links a:hover {
+      color: #0056b3;
+    }
+    .level-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 20px;
+      margin: 20px;
+      justify-items: center;
+    }
+    .level-card {
+      width: 140px;
+      height: 140px;
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      position: relative;
+    }
+    .level-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 14px rgba(0,0,0,0.15);
+    }
+    .completed::after {
+      content: "✔";
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: #28a745;
+      color: white;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      font-size: 0.8rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .locked {
+      background: #f0f0f0;
+      color: #aaa;
+      pointer-events: none;
+    }
+    #gameContainer {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+    }
+    .top-bar {
+      width: 100%;
+      padding: 15px 30px;
+      background: #fff;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 10;
+    }
+    .left-stats {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      font-size: 0.9rem;
+    }
+    .level-info {
+      font-weight: bold;
+    }
+    .progress-bar-container-small {
+      width: 150px;
+      height: 6px;
+      background: #ddd;
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .game-progress {
+      height: 100%;
+      width: 0%;
+      background: #007bff;
+      transition: width 0.3s ease;
+    }
+    .word-boxes {
+      display: flex;
+      justify-content: center;
+      margin: 100px 0 30px 0;
+      flex-wrap: wrap;
+      max-width: 80%;
+    }
+    .box {
+      width: 40px;
+      height: 50px;
+      border: 2px solid #ccc;
+      border-radius: 8px;
+      margin: 3px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      background: #fff;
+    }
+    .active-box {
+      border-color: #007bff;
+      box-shadow: 0 0 10px rgba(0,123,255,0.5);
+    }
+    .keyboard-container {
+      display: flex;
+      gap: 20px;
+      align-items: flex-start;
+      margin-bottom: 20px;
+    }
+    .keyboard {
+      display: inline-block;
+      padding: 20px;
+      background: #f8f9fa;
+      border-radius: 12px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+    }
+    .row {
+      display: flex;
+      justify-content: center;
+      margin: 5px 0;
+    }
+    .key {
+      width: 50px;
+      height: 55px;
+      margin: 4px;
+      border-radius: 6px;
+      background: #fff;
+      border: 1px solid #ccc;
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .key.highlight {
+      background: #007bff;
+      color: #fff;
+    }
+    #next-btn, #back-btn {
+      margin-top: 10px;
+      padding: 10px 20px;
+      font-size: 1rem;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      display: none;
+    }
+    #back-btn {
+      background: #6c757d;
+    }
+    #congrats {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0);
+      background: #28a745;
+      color: white;
+      padding: 20px 40px;
+      border-radius: 10px;
+      font-size: 1.5rem;
+      font-weight: bold;
+      transition: transform 0.3s ease;
+      z-index: 100;
+    }
+    #congrats.show {
+      transform: translate(-50%, -50%) scale(1);
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Typing Trainer</h1>
+    <div class="nav-links">
+      <a href="#">Home</a>
+      <a href="#">Stats</a>
+      <a href="#">Lessons</a>
+      <a href="#">Badges</a>
+    </div>
+  </header>
+
+  <div id="levelScreen">
+    <h2>Home Row</h2>
+    <div class="level-grid" id="levelGrid"></div>
+  </div>
+
+  <div id="gameContainer">
+    <div class="top-bar">
+      <div class="left-stats">
+        WPM: <span id="wpm">0</span>
+        Accuracy: <span id="accuracy">100%</span>
+        Time: <span id="timer">0s</span>
+      </div>
+      <div>
+        <div class="level-info" id="levelInfo"></div>
+        <div class="progress-bar-container-small">
+          <div class="game-progress" id="gameProgress"></div>
+        </div>
+      </div>
+    </div>
+    <div class="word-boxes" id="wordBoxes"></div>
+    <div class="keyboard-container">
+      <div class="keyboard" id="keyboard"></div>
+    </div>
+    <button id="next-btn">Next Level</button>
+    <button id="back-btn">Back to Levels</button>
+  </div>
+
+  <div id="congrats">Congratulations!</div>
+
+  <script>
+    const levels = [
+      "Introduction to Typing","Keys f & j","Space Bar","Review: f & j","Keys d & k","Review: d & k","Practice: d & k","Play: fjkd",
+      "Keys s & l","Review: s & l","Practice: s & l","Keys a & ;","Review: a & ;","First 8 Keys","Play: First 8 Keys","Home, Sweet Home!",
+      "Home Row: L Hand","Home Row: R Hand","Keys g & h","Review: g & h","Practice: g & h","Home Row Review","Play Home Row"
+    ];
+    const pointsPerLevel = 300;
+    let completedLevels = 0;
+    let points = 0;
+    let currentLesson = 0;
+    let currentVariation = 0;
+    let variations = [];
+    let text = "";
+    let currentIndex = 0;
+    let correct = 0;
+    let total = 0;
+    let startTime = null;
+    let timerInterval;
+    let fPressed = false;
+    let jPressed = false;
+
+    const levelScreen = document.getElementById("levelScreen");
+    const levelGrid = document.getElementById("levelGrid");
+    const gameContainer = document.getElementById("gameContainer");
+    const wordBoxes = document.getElementById("wordBoxes");
+    const keyboard = document.getElementById("keyboard");
+    const levelInfo = document.getElementById("levelInfo");
+    const gameProgress = document.getElementById("gameProgress");
+    const wpmEl = document.getElementById("wpm");
+    const accuracyEl = document.getElementById("accuracy");
+    const timerEl = document.getElementById("timer");
+    const nextBtn = document.getElementById("next-btn");
+    const backBtn = document.getElementById("back-btn");
+    const congrats = document.getElementById("congrats");
+
+    function createLevelGrid() {
+      levelGrid.innerHTML = "";
+      levels.forEach((level, index) => {
+        const card = document.createElement("div");
+        card.classList.add("level-card");
+        if (index <= completedLevels) {
+          card.addEventListener("click", () => {
+            startLesson(index);
+          });
+        } else {
+          card.classList.add("locked");
+        }
+        if (index < completedLevels) {
+          card.classList.add("completed");
+        }
+        card.innerHTML = `
+          <div class="level-icon">⌨️</div>
+          <div class="level-number">Level ${index + 1}</div>
+          <div class="level-title">${level}</div>
+        `;
+        levelGrid.appendChild(card);
+      });
+    }
+
+    function updateProgress() {
+      // Just a placeholder to handle progress if needed later
+    }
+
+    function createKeyboard() {
+      keyboard.innerHTML = "";
+      const keys = [
+        ["q","w","e","r","t","y","u","i","o","p"],
+        ["a","s","d","f","g","h","j","k","l"],
+        ["z","x","c","v","b","n","m"]
+      ];
+      keys.forEach(rowKeys => {
+        const row = document.createElement("div");
+        row.classList.add("row");
+        rowKeys.forEach(keyChar => {
+          const key = document.createElement("div");
+          key.classList.add("key");
+          key.id = "key-" + keyChar.toUpperCase();
+          key.textContent = keyChar;
+          row.appendChild(key);
+        });
+        keyboard.appendChild(row);
+      });
+      // Add space key
+      const spaceRow = document.createElement("div");
+      spaceRow.classList.add("row");
+      const space = document.createElement("div");
+      space.classList.add("key");
+      space.id = "key-SPACE";
+      space.style.width = "300px";
+      space.textContent = "Space";
+      spaceRow.appendChild(space);
+      keyboard.appendChild(spaceRow);
+    }
+
+    function startLesson(index) {
+      currentLesson = index;
+      currentVariation = 0;
+      variations = generateVariations(index);
+      text = variations[currentVariation];
+      currentIndex = 0;
+      correct = 0;
+      total = 0;
+      startTime = null;
+      levelScreen.style.display = "none";
+      gameContainer.style.display = "flex";
+      levelInfo.textContent = "Level " + (currentLesson + 1) + ": " + levels[currentLesson];
+      renderBoxes();
+      highlightNextKey();
+      wpmEl.textContent = "0";
+      accuracyEl.textContent = "100%";
+      timerEl.textContent = "0s";
+      gameProgress.style.width = "0%";
+      nextBtn.style.display = "none";
+      backBtn.style.display = "inline-block";
+      if (currentLesson === 0) {
+        renderIntro();
+      }
+    }
+
+    function renderIntro() {
+      wordBoxes.innerHTML = `
+        <div style="text-align:center;">
+          <img src="Finger_position_on_a_keyboard.png" alt="Keyboard Home Row" style="max-width:50%; margin-bottom:20px;">
+          <p style="max-width:700px; margin:0 auto; font-size:1rem; color:#333;">
+            The home row is the central row of letters on your keyboard. Your fingers should always return to this base position. The small bumps on the 'F' and 'J' keys will help you find the correct placement without looking. Place your index fingers on F and J.
+          </p>
+        </div>
+      `;
+      fPressed = false;
+      jPressed = false;
+      document.addEventListener("keydown", handleIntroKeyPress);
+    }
+
+    function handleIntroKeyPress(e) {
+      if (currentLesson !== 0) return;
+      if (e.key === "f" || e.key === "F") fPressed = true;
+      if (e.key === "j" || e.key === "J") jPressed = true;
+      if (fPressed && jPressed) {
+        document.removeEventListener("keydown", handleIntroKeyPress);
+        completedLevels = Math.max(completedLevels, currentLesson + 1);
+        points += pointsPerLevel;
+        updateProgress();
+        showCongrats();
+        nextBtn.style.display = "inline-block";
+      }
+    }
+
+    function generateVariations(index) {
+      const baseWords = ["f", "j", "d", "k", "s", "l", "a", ";"];
+      const variations = [];
+      for (let i = 0; i < 6; i++) {
+        let variation = "";
+        const len = 5 + i*2;
+        for (let j = 0; j < len; j++) {
+          variation += baseWords[Math.floor(Math.random() * baseWords.length)];
+        }
+        variations.push(variation);
+      }
+      return variations;
+    }
+
+    function renderBoxes() {
+      wordBoxes.innerHTML = "";
+      text.split("").forEach((char, i) => {
+        const box = document.createElement("div");
+        box.classList.add("box");
+        if (i === currentIndex) box.classList.add("active-box");
+        box.textContent = char === " " ? "␣" : char;
+        wordBoxes.appendChild(box);
+      });
+      updateGameProgress();
+    }
+
+    function highlightNextKey() {
+      document.querySelectorAll(".key").forEach(k => k.classList.remove("highlight"));
+      if (currentIndex < text.length) {
+        let nextChar = text[currentIndex];
+        if (nextChar === " ") nextChar = "Space";
+        const key = document.getElementById("key-" + nextChar.toUpperCase());
+        if (key) key.classList.add("highlight");
+      }
+    }
+
+    function updateGameProgress() {
+      gameProgress.style.width = ((currentIndex / text.length) * 100) + "%";
+    }
+
+    function updateStats() {
+      const elapsed = (Date.now() - startTime) / 1000 / 60;
+      const wpm = isFinite(elapsed) && elapsed > 0 ? Math.round((correct / 5) / elapsed) : 0;
+      const accuracy = total > 0 ? Math.round((correct / total) * 100) : 100;
+      wpmEl.textContent = wpm;
+      accuracyEl.textContent = accuracy + "%";
+    }
+
+    function startTimer() {
+      startTime = Date.now();
+      timerInterval = setInterval(() => {
+        timerEl.textContent = Math.floor((Date.now() - startTime) / 1000) + "s";
+        updateStats();
+      }, 1000);
+    }
+
+    document.addEventListener("keydown", e => {
+      const lesson = levels[currentLesson];
+      if (lesson === "Introduction to Typing") return;
+      if (!startTime) startTimer();
+      let key = e.key.length === 1 ? e.key : (e.key === " " ? " " : null);
+      if (!key) return;
+      total++;
+      const expectedChar = text[currentIndex];
+      const correctPress = (key === expectedChar) || (expectedChar === " " && key === " ");
+      if (correctPress) {
+        correct++;
+        currentIndex++;
+        renderBoxes();
+        highlightNextKey();
+        updateStats();
+        if (currentIndex >= text.length) {
+          clearInterval(timerInterval);
+          nextBtn.style.display = "inline-block";
+        }
+      }
+    });
+
+    nextBtn.addEventListener("click", () => {
+      currentVariation++;
+      if (currentVariation < 6) {
+        text = variations[currentVariation];
+        currentIndex = 0;
+        correct = 0;
+        total = 0;
+        startTime = null;
+        timerEl.textContent = "0s";
+        wpmEl.textContent = "0";
+        accuracyEl.textContent = "100%";
+        gameProgress.style.width = "0%";
+        nextBtn.style.display = "none";
+        renderBoxes();
+        highlightNextKey();
+      } else {
+        showCongrats();
+        completedLevels = Math.max(completedLevels, currentLesson + 1);
+        points += pointsPerLevel;
+        updateProgress();
+        nextBtn.style.display = "none";
+      }
+    });
+
+    backBtn.addEventListener("click", () => {
+      gameContainer.style.display = "none";
+      levelScreen.style.display = "block";
+      createLevelGrid();
+    });
+
+    function showCongrats() {
+      congrats.classList.add("show");
+      setTimeout(() => {
+        congrats.classList.remove("show");
+      }, 1500);
+    }
+
+    createLevelGrid();
+    createKeyboard();
+  </script>
+</body>
+</html>
