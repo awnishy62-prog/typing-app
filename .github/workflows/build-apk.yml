@@ -46,6 +46,12 @@ jobs:
         # Also copy any additional files from www folder
         cp -r www/* dist/ 2>/dev/null || echo "No additional files in www folder"
         
+        # Update configuration if apk-config.json exists
+        if [ -f "apk-config.json" ]; then
+          echo "Updating APK configuration..."
+          node scripts/update-config.js
+        fi
+        
         # Initialize Capacitor
         npx cap init "Web2App" "com.example.web2app" || echo "Capacitor already initialized"
         

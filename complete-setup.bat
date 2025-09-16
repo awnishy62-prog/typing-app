@@ -114,9 +114,12 @@ echo.
 REM Show next steps
 echo 🎯 Next Steps:
 echo 1. Add your website files to the www/ folder
-echo 2. Configure git remote (if not done already)
-echo 3. Commit and push your changes
-echo 4. Download your APK from GitHub Actions
+echo 2. Customize your APK (optional):
+echo    - Edit apk-config.json for app name, icon, etc.
+echo    - Add icon.png to www/ folder for custom app icon
+echo 3. Configure git remote (if not done already)
+echo 4. Commit and push your changes
+echo 5. Use 'web2apk getapp' to check status and download APK
 echo.
 
 REM Ask if user wants to open VS Code

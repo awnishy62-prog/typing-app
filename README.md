@@ -79,17 +79,39 @@ git remote remove origin
 git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPO_NAME.git
 ```
 
-### **Step 5: Commit and Push**
+### **Step 5: Customize Your APK (Optional)**
+```bash
+# Edit apk-config.json to customize your app
+{
+  "appName": "My Awesome App",
+  "appId": "com.mycompany.myapp",
+  "version": "1.0.0",
+  "description": "My converted web app",
+  "icon": {
+    "enabled": true,
+    "path": "www/icon.png"
+  }
+}
+
+# Add your custom icon (192x192 PNG recommended)
+# Place icon.png in the www/ folder
+```
+
+### **Step 6: Commit and Push**
 ```bash
 git add .
 git commit -m "Add my website project"
 git push origin main
 ```
 
-### **Step 6: Download Your APK**
-- **Automatic**: GitHub Actions builds your APK automatically!
-- **Download**: Go to Actions tab → Latest workflow → Download APK artifact
-- **Releases**: Check the Releases page for automatic releases
+### **Step 7: Download Your APK**
+```bash
+# Check build status and download APK automatically
+web2apk getapp
+
+# Or manually download from GitHub Actions
+# Go to Actions tab → Latest workflow → Download APK artifact
+```
 
 **That's it! No Android Studio, no local setup needed!** 🎉
 
@@ -109,6 +131,36 @@ git push origin main
 | **test-setup.yml** | Pull requests | Tests setup without building APK |
 
 **No local commands needed!** Everything runs automatically in GitHub Actions.
+
+## 🚀 Web2APK Command
+
+The `web2apk` command provides easy access to your APK builds:
+
+### **Commands:**
+```bash
+web2apk getapp     # Check build status and download APK
+web2apk config     # Show current APK configuration
+web2apk setup      # Run initial setup
+web2apk help       # Show help message
+```
+
+### **Examples:**
+```bash
+# Check if your latest build is ready and download it
+web2apk getapp
+
+# View your current app settings
+web2apk config
+
+# Run setup (if you haven't already)
+web2apk setup
+```
+
+### **Features:**
+- ✅ **Real-time build status** - See if your APK is ready
+- ✅ **Automatic download** - Downloads APK to your project folder
+- ✅ **Progress tracking** - Shows build progress in real-time
+- ✅ **Error reporting** - Clear error messages if builds fail
 
 ## 📁 Project Structure
 
