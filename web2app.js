@@ -22,6 +22,34 @@ function askQuestion(question) {
   });
 }
 
+// Helper function to get the correct GitHub CLI command
+function getGitHubCLICommand() {
+  try {
+    execSync('gh --version', { stdio: 'pipe' });
+    return 'gh';
+  } catch (ghError) {
+    // Check common installation paths
+    const possiblePaths = [
+      'C:\\Program Files\\GitHub CLI\\gh.exe',
+      'C:\\Program Files (x86)\\GitHub CLI\\gh.exe',
+      'C:\\Users\\' + process.env.USERNAME + '\\AppData\\Local\\Programs\\GitHub CLI\\gh.exe',
+      '/usr/local/bin/gh',
+      '/usr/bin/gh'
+    ];
+    
+    for (const path of possiblePaths) {
+      try {
+        execSync(`"${path}" --version`, { stdio: 'pipe' });
+        return `"${path}"`;
+      } catch (e) {
+        // Continue checking other paths
+      }
+    }
+    
+    return 'gh'; // Fallback
+  }
+}
+
 // Main command handler
 async function main() {
   const args = process.argv.slice(2);
@@ -388,8 +416,12 @@ async function customizeAppSettings() {
   console.log(chalk.green('✅ App configuration saved!'));
 }
 
-async function pushToGitHub(ghCommand = 'gh') {
+async function pushToGitHub(ghCommand = null) {
   console.log(chalk.blue('\n🚀 Pushing to GitHub...'));
+  
+  // Get the correct GitHub CLI command
+  const actualGhCommand = ghCommand || getGitHubCLICommand();
+  console.log(chalk.gray(`🔧 Using GitHub CLI: ${actualGhCommand}`));
   
   const spinner = ora('Adding files to Git...').start();
   
@@ -421,8 +453,8 @@ async function pushToGitHub(ghCommand = 'gh') {
           const cleanRepoName = repoName.replace('.git', '');
           
           try {
-            // Create repository using GitHub CLI
-            execSync(`gh repo create ${cleanRepoName} --public --source=. --remote=origin --push`, { stdio: 'pipe' });
+            // Create repository using GitHub CLI with the correct command
+            execSync(`${actualGhCommand} repo create ${cleanRepoName} --public --source=. --remote=origin --push`, { stdio: 'pipe' });
             spinner.succeed(chalk.green('✅ Created GitHub repository and pushed successfully!'));
             console.log(chalk.blue('🔄 GitHub Actions is now building your APK...'));
           } catch (createError) {
@@ -430,6 +462,7 @@ async function pushToGitHub(ghCommand = 'gh') {
             console.log(chalk.yellow('💡 Please create the repository manually on GitHub and try again.'));
             console.log(chalk.blue(`🔗 Go to: https://github.com/new`));
             console.log(chalk.blue(`📝 Repository name: ${cleanRepoName}`));
+            console.log(chalk.yellow(`🔧 GitHub CLI command used: ${actualGhCommand}`));
             throw createError;
           }
         } else {

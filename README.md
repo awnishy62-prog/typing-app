@@ -749,6 +749,48 @@ fatal: repository 'https://github.com/username/reponame.git/' not found
 git push origin main
 ```
 
+### **Problem 13: "GitHub CLI ready but 'gh' not recognized"** ❌
+
+**What you see:**
+```
+✅ GitHub CLI is ready!
+...
+❌ Failed to create repository: Command failed: gh repo create...
+'gh' is not recognized as an internal or external command
+```
+
+**Solution:** GitHub CLI detection worked, but the command path is wrong! 🔧
+
+**What happens automatically:**
+- ✅ The tool will detect the correct GitHub CLI path
+- ✅ Use the full path to the GitHub CLI executable
+- ✅ Show which command is being used for debugging
+
+**If it still fails:**
+1. **Check GitHub CLI installation:**
+   ```bash
+   # Try these commands:
+   gh --version
+   "C:\Program Files\GitHub CLI\gh.exe" --version
+   ```
+
+2. **Reinstall GitHub CLI:**
+   ```bash
+   # Windows:
+   winget install GitHub.cli
+   
+   # Or download from: https://cli.github.com/
+   ```
+
+3. **Restart your terminal** after installation
+
+**Manual workaround:**
+```bash
+# Create repository manually on GitHub first
+# Then run:
+git push origin main
+```
+
 ## 🎨 Making Your App Look Amazing
 
 ### **Custom App Icon** 🖼️
