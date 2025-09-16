@@ -328,11 +328,43 @@ async function pushToGitHub() {
     execSync('git commit -m "Initial commit: Convert website to Android app"', { stdio: 'pipe' });
     spinner.text = 'Pushing to GitHub...';
     
-    // Push
-    execSync('git push origin main', { stdio: 'pipe' });
-    
-    spinner.succeed(chalk.green('✅ Successfully pushed to GitHub!'));
-    console.log(chalk.blue('🔄 GitHub Actions is now building your APK...'));
+    // Try to push
+    try {
+      execSync('git push origin main', { stdio: 'pipe' });
+      spinner.succeed(chalk.green('✅ Successfully pushed to GitHub!'));
+      console.log(chalk.blue('🔄 GitHub Actions is now building your APK...'));
+    } catch (pushError) {
+      // If push fails, try to create the repository
+      if (pushError.message.includes('Repository not found') || pushError.message.includes('remote: Repository not found')) {
+        spinner.text = 'Creating GitHub repository...';
+        
+        // Get repository info from git remote
+        const remoteUrl = execSync('git remote get-url origin', { encoding: 'utf8' }).trim();
+        const repoMatch = remoteUrl.match(/github\.com[:/]([^/]+)\/([^/]+?)(?:\.git)?$/);
+        
+        if (repoMatch) {
+          const [, username, repoName] = repoMatch;
+          const cleanRepoName = repoName.replace('.git', '');
+          
+          try {
+            // Create repository using GitHub CLI
+            execSync(`gh repo create ${cleanRepoName} --public --source=. --remote=origin --push`, { stdio: 'pipe' });
+            spinner.succeed(chalk.green('✅ Created GitHub repository and pushed successfully!'));
+            console.log(chalk.blue('🔄 GitHub Actions is now building your APK...'));
+          } catch (createError) {
+            spinner.fail(chalk.red('❌ Failed to create repository: ' + createError.message));
+            console.log(chalk.yellow('💡 Please create the repository manually on GitHub and try again.'));
+            console.log(chalk.blue(`🔗 Go to: https://github.com/new`));
+            console.log(chalk.blue(`📝 Repository name: ${cleanRepoName}`));
+            throw createError;
+          }
+        } else {
+          throw pushError;
+        }
+      } else {
+        throw pushError;
+      }
+    }
     
   } catch (error) {
     spinner.fail(chalk.red('❌ Failed to push to GitHub: ' + error.message));
