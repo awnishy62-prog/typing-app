@@ -75,10 +75,16 @@ async function getApp() {
       // Download APK
       await downloadAPK(owner, repoName, workflowStatus.runId, workflowStatus.ghCommand);
       
+      console.log(chalk.green('\n🎉 APK ready! Build and download completed successfully!'));
+      console.log(chalk.cyan('📱 You can now install the APK on your Android device.'));
+      
     } else if (workflowStatus.status === 'in_progress') {
       spinner.warn(chalk.yellow('⏳ Build is currently in progress...'));
       console.log(chalk.blue(`📊 Progress: ${workflowStatus.progress}%`));
       console.log(chalk.cyan(`🔗 View progress: https://github.com/${owner}/${repoName}/actions/runs/${workflowStatus.runId}`));
+      
+      // Wait for build to complete with live updates
+      await waitForBuildCompletion(owner, repoName, workflowStatus.runId, workflowStatus.ghCommand);
       
     } else if (workflowStatus.status === 'completed' && workflowStatus.conclusion === 'failure') {
       spinner.fail(chalk.red('❌ Latest build failed'));
@@ -93,6 +99,68 @@ async function getApp() {
     spinner.fail(chalk.red('Error: ' + error.message));
     process.exit(1);
   }
+}
+
+async function waitForBuildCompletion(owner, repo, runId, ghCommand) {
+  console.log(chalk.yellow('\n🔄 Waiting for build to complete...'));
+  console.log(chalk.blue('⏱️  Checking every 30 seconds for updates...\n'));
+  
+  let attempts = 0;
+  const maxAttempts = 60; // 30 minutes max wait time
+  
+  while (attempts < maxAttempts) {
+    try {
+      // Wait 30 seconds before checking again
+      await new Promise(resolve => setTimeout(resolve, 30000));
+      attempts++;
+      
+      // Get current status
+      const output = execSync(`${ghCommand} run view ${runId} --repo ${owner}/${repo} --json status,conclusion`, { 
+        encoding: 'utf8',
+        stdio: 'pipe'
+      });
+      
+      const runData = JSON.parse(output);
+      const status = runData.status;
+      const conclusion = runData.conclusion;
+      
+      // Show progress update
+      const progress = Math.min(attempts * 2, 95); // Simulate progress up to 95%
+      process.stdout.write(`\r${chalk.blue('📊 Progress:')} ${progress}% ${chalk.gray(`(Check ${attempts}/${maxAttempts})`)}`);
+      
+      if (status === 'completed') {
+        console.log('\n'); // New line after progress
+        
+        if (conclusion === 'success') {
+          console.log(chalk.green('✅ Build completed successfully!'));
+          console.log(chalk.blue('📥 Downloading APK...'));
+          
+          // Download the APK
+          await downloadAPK(owner, repo, runId, ghCommand);
+          
+          console.log(chalk.green('\n🎉 APK ready! Build and download completed successfully!'));
+          console.log(chalk.cyan('📱 You can now install the APK on your Android device.'));
+          return;
+          
+        } else if (conclusion === 'failure') {
+          console.log(chalk.red('\n❌ Build failed!'));
+          console.log(chalk.red(`🔗 View error details: https://github.com/${owner}/${repo}/actions/runs/${runId}`));
+          return;
+          
+        } else {
+          console.log(chalk.yellow(`\n⚠️  Build completed with status: ${conclusion}`));
+          return;
+        }
+      }
+      
+    } catch (error) {
+      console.log(chalk.red(`\n❌ Error checking build status: ${error.message}`));
+      return;
+    }
+  }
+  
+  console.log(chalk.yellow('\n⏰ Build is taking longer than expected. You can check manually:'));
+  console.log(chalk.blue(`🔗 https://github.com/${owner}/${repo}/actions/runs/${runId}`));
 }
 
 async function getWorkflowStatus(owner, repo) {
