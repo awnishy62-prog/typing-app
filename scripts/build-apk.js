@@ -81,10 +81,10 @@ async function ensureSetup() {
 async function prepareWebsiteFiles() {
   // Check for website files in different locations
   const possibleIndexFiles = [
+    'www/index.html',
     'index.html',
     'src/index.html',
-    'public/index.html',
-    'www/index.html'
+    'public/index.html'
   ];
   
   let indexFile = null;
@@ -103,7 +103,10 @@ async function prepareWebsiteFiles() {
   await fs.ensureDir('dist');
   
   // Copy website files to dist
-  if (indexFile === 'index.html') {
+  if (indexFile === 'www/index.html') {
+    // Copy from www folder
+    await fs.copy('www', 'dist');
+  } else if (indexFile === 'index.html') {
     // Ensure dist directory is clean
     if (await fs.pathExists('dist')) {
       await fs.remove('dist');

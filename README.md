@@ -16,27 +16,42 @@ Convert your HTML/CSS/JavaScript website into an Android APK with just one comma
 
 ## 🚀 Quick Start (GitHub Actions Only!)
 
-### **Step 1: Fork or Clone This Repository**
+### **Step 1: Clone This Repository**
 ```bash
 git clone https://github.com/AshishY794/web2appA.git
 cd web2appA
 ```
 
 ### **Step 2: Add Your Website Files**
-Simply place your website files in the root directory:
+Place your complete website project in the `www` folder:
+```bash
+# Copy your entire website project to the www folder
+cp -r /path/to/your/website/* www/
+```
+
+**Required files in `www` folder:**
 - `index.html` (required)
 - `style.css` (optional)
 - `script.js` (optional)
 - Any other assets (images, fonts, etc.)
 
-### **Step 3: Push to GitHub**
+### **Step 3: Remove Current Git and Add Your Remote**
+```bash
+# Remove current git remote
+git remote remove origin
+
+# Add your own repository
+git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPO_NAME.git
+```
+
+### **Step 4: Commit and Push**
 ```bash
 git add .
-git commit -m "Add my website"
+git commit -m "Add my website project"
 git push origin main
 ```
 
-### **Step 4: Download Your APK**
+### **Step 5: Download Your APK**
 - **Automatic**: GitHub Actions builds your APK automatically!
 - **Download**: Go to Actions tab → Latest workflow → Download APK artifact
 - **Releases**: Check the Releases page for automatic releases
@@ -64,11 +79,13 @@ git push origin main
 
 ```
 web2appA/
-├── 📄 index.html              # Your website's main file
-├── 🎨 style.css               # Your website's styles
-├── ⚡ script.js               # Your website's JavaScript
-├── 📱 manifest.json           # PWA manifest
-├── 🔧 sw.js                   # Service worker
+├── 📁 www/                    # Your website files go here
+│   ├── 📄 index.html          # Your website's main file
+│   ├── 🎨 style.css           # Your website's styles
+│   ├── ⚡ script.js           # Your website's JavaScript
+│   ├── 📱 manifest.json       # PWA manifest
+│   ├── 🔧 sw.js               # Service worker
+│   └── 📁 assets/             # Your images, fonts, etc.
 ├── 📦 package.json            # Dependencies and scripts
 ├── ⚙️ capacitor.config.ts     # Capacitor configuration
 ├── 📁 .github/                # GitHub Actions workflows

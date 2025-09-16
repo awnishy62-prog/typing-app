@@ -35,13 +35,16 @@ jobs:
       
     - name: Setup Capacitor
       run: |
-        # Create dist directory and copy files
+        # Create dist directory and copy files from www folder
         mkdir -p dist
-        cp index.html dist/ 2>/dev/null || echo "index.html not found"
-        cp style.css dist/ 2>/dev/null || echo "style.css not found"
-        cp script.js dist/ 2>/dev/null || echo "script.js not found"
-        cp manifest.json dist/ 2>/dev/null || echo "manifest.json not found"
-        cp sw.js dist/ 2>/dev/null || echo "sw.js not found"
+        cp www/index.html dist/ 2>/dev/null || echo "www/index.html not found"
+        cp www/style.css dist/ 2>/dev/null || echo "www/style.css not found"
+        cp www/script.js dist/ 2>/dev/null || echo "www/script.js not found"
+        cp www/manifest.json dist/ 2>/dev/null || echo "www/manifest.json not found"
+        cp www/sw.js dist/ 2>/dev/null || echo "www/sw.js not found"
+        
+        # Also copy any additional files from www folder
+        cp -r www/* dist/ 2>/dev/null || echo "No additional files in www folder"
         
         # Initialize Capacitor
         npx cap init "Web2App" "com.example.web2app" || echo "Capacitor already initialized"

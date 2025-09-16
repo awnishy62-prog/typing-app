@@ -14,15 +14,19 @@ async function setup() {
     
     // Check if user has their website files
     const hasIndexHtml = await fs.pathExists('index.html');
+    const hasWwwFiles = await fs.pathExists('www/index.html');
     const hasSrcFiles = await fs.pathExists('src/index.html');
     
-    if (!hasIndexHtml && !hasSrcFiles) {
+    if (!hasIndexHtml && !hasWwwFiles && !hasSrcFiles) {
       spinner.warn('No index.html found. Creating example files...');
       await createExampleFiles();
     }
     
-    // Copy website files to dist if they exist in root
-    if (hasIndexHtml) {
+    // Copy website files to dist
+    if (hasWwwFiles) {
+      // Copy from www folder
+      await fs.copy('www', 'dist');
+    } else if (hasIndexHtml) {
       // First, ensure dist directory is clean
       if (await fs.pathExists('dist')) {
         await fs.remove('dist');
