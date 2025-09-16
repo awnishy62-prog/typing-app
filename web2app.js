@@ -298,6 +298,21 @@ async function addCustomWebsite() {
   console.log(chalk.yellow('   If you have files like index.html, style.css, script.js in the parent folder, we\'ll copy them!'));
   
   try {
+    // Check if www directory already has files
+    if (await fs.pathExists('www')) {
+      const existingFiles = await fs.readdir('www');
+      if (existingFiles.length > 0) {
+        console.log(chalk.yellow(`⚠️  Found existing files in www/: ${existingFiles.join(', ')}`));
+        const replaceChoice = await askQuestion('Do you want to replace existing files? (y/n): ');
+        if (replaceChoice.toLowerCase() === 'y' || replaceChoice.toLowerCase() === 'yes') {
+          console.log(chalk.blue('🗑️  Clearing existing files...'));
+          await fs.emptyDir('www');
+        } else {
+          console.log(chalk.blue('📁 Keeping existing files, will add new ones...'));
+        }
+      }
+    }
+    
     // Check parent directory for common website files
     const parentDir = path.join(process.cwd(), '..');
     const commonFiles = ['index.html', 'style.css', 'script.js', 'app.js', 'main.js', 'styles.css'];
@@ -313,14 +328,15 @@ async function addCustomWebsite() {
     if (foundFiles.length > 0) {
       console.log(chalk.green(`✅ Found website files: ${foundFiles.join(', ')}`));
       
-      // Clear www directory first
-      await fs.emptyDir('www');
+      // Ensure www directory exists
+      await fs.ensureDir('www');
       
       // Copy found files
       for (const file of foundFiles) {
         const sourcePath = path.join(parentDir, file);
         const destPath = path.join('www', file);
         await fs.copy(sourcePath, destPath);
+        console.log(chalk.gray(`📄 Copied: ${file}`));
       }
       
       // Also copy any other HTML, CSS, JS files
@@ -333,6 +349,7 @@ async function addCustomWebsite() {
           const destPath = path.join('www', file);
           if (!await fs.pathExists(destPath)) { // Don't overwrite already copied files
             await fs.copy(filePath, destPath);
+            console.log(chalk.gray(`📄 Copied: ${file}`));
           }
         }
       }
@@ -343,8 +360,8 @@ async function addCustomWebsite() {
       const websitePath = await askQuestion('No website files found in parent directory. Enter the path to your website folder: ');
       
       if (await fs.pathExists(websitePath)) {
-        // Clear www directory first
-        await fs.emptyDir('www');
+        // Ensure www directory exists
+        await fs.ensureDir('www');
         
         // Copy files
         await fs.copy(websitePath, 'www');
@@ -487,12 +504,171 @@ async function waitForBuildAndDownload() {
   await new Promise(resolve => setTimeout(resolve, 10000));
   
   try {
-    // Use the existing web2apk getapp functionality
-    const { getApp } = require('./web2apk.js');
-    await getApp();
+    // Get repository info
+    const remoteUrl = execSync('git remote get-url origin', { encoding: 'utf8' }).trim();
+    const repoMatch = remoteUrl.match(/github\.com[:/]([^/]+)\/([^/]+?)(?:\.git)?$/);
+    
+    if (!repoMatch) {
+      throw new Error('Could not determine GitHub repository from git remote.');
+    }
+
+    const [, owner, repo] = repoMatch;
+    const repoName = repo.replace('.git', '');
+    
+    // Get GitHub CLI command
+    const ghCommand = getGitHubCLICommand();
+    
+    // Get workflow status
+    const workflowStatus = await getWorkflowStatus(owner, repoName, ghCommand);
+    
+    if (workflowStatus.status === 'completed' && workflowStatus.conclusion === 'success') {
+      console.log(chalk.green('✅ Build already completed! Downloading APK...'));
+      await downloadAPK(owner, repoName, workflowStatus.runId, ghCommand);
+    } else {
+      console.log(chalk.blue('🔄 Build in progress, waiting for completion...'));
+      await waitForBuildCompletion(owner, repoName, workflowStatus.runId, ghCommand);
+    }
+    
   } catch (error) {
-    console.log(chalk.yellow('⚠️  Could not automatically download APK.'));
+    console.log(chalk.yellow('⚠️  Could not automatically download APK: ' + error.message));
     console.log(chalk.blue('💡 You can manually download it from GitHub Actions when ready.'));
+    console.log(chalk.blue('🔗 Go to: https://github.com/' + (repoMatch ? repoMatch[1] + '/' + repoMatch[2].replace('.git', '') : 'your-repo') + '/actions'));
+  }
+}
+
+async function getWorkflowStatus(owner, repo, ghCommand) {
+  try {
+    // Get the latest workflow run
+    const output = execSync(`${ghCommand} run list --repo ${owner}/${repo} --limit 1 --json databaseId,status,conclusion`, { 
+      encoding: 'utf8',
+      stdio: 'pipe'
+    });
+    
+    const runs = JSON.parse(output);
+    if (runs.length === 0) {
+      throw new Error('No workflow runs found. The workflow may not have started yet.');
+    }
+    
+    const latestRun = runs[0];
+    return {
+      runId: latestRun.databaseId,
+      status: latestRun.status,
+      conclusion: latestRun.conclusion,
+      ghCommand: ghCommand
+    };
+    
+  } catch (error) {
+    throw new Error('Failed to get workflow status: ' + error.message);
+  }
+}
+
+async function waitForBuildCompletion(owner, repo, runId, ghCommand) {
+  console.log(chalk.yellow('\n🔄 Waiting for build to complete...'));
+  console.log(chalk.blue('⏱️  Checking every 30 seconds for updates...\n'));
+  
+  let attempts = 0;
+  const maxAttempts = 60; // 30 minutes max wait time
+  
+  while (attempts < maxAttempts) {
+    try {
+      // Wait 30 seconds before checking again
+      await new Promise(resolve => setTimeout(resolve, 30000));
+      attempts++;
+      
+      // Get current status
+      const output = execSync(`${ghCommand} run view ${runId} --repo ${owner}/${repo} --json status,conclusion`, { 
+        encoding: 'utf8',
+        stdio: 'pipe'
+      });
+      
+      const runData = JSON.parse(output);
+      const status = runData.status;
+      const conclusion = runData.conclusion;
+      
+      // Show progress update
+      const progress = Math.min(attempts * 2, 95); // Simulate progress up to 95%
+      process.stdout.write(`\r${chalk.blue('📊 Progress:')} ${progress}% ${chalk.gray(`(Check ${attempts}/${maxAttempts})`)}`);
+      
+      if (status === 'completed') {
+        console.log('\n'); // New line after progress
+        
+        if (conclusion === 'success') {
+          console.log(chalk.green('✅ Build completed successfully!'));
+          console.log(chalk.blue('📥 Downloading APK...'));
+          
+          // Download the APK
+          await downloadAPK(owner, repo, runId, ghCommand);
+          
+          console.log(chalk.green('\n🎉 APK ready! Build and download completed successfully!'));
+          console.log(chalk.cyan('📱 You can now install the APK on your Android device.'));
+          return;
+          
+        } else if (conclusion === 'failure') {
+          console.log(chalk.red('\n❌ Build failed!'));
+          console.log(chalk.red(`🔗 View error details: https://github.com/${owner}/${repo}/actions/runs/${runId}`));
+          return;
+          
+        } else {
+          console.log(chalk.yellow(`\n⚠️  Build completed with status: ${conclusion}`));
+          return;
+        }
+      }
+      
+    } catch (error) {
+      console.log(chalk.red(`\n❌ Error checking build status: ${error.message}`));
+      return;
+    }
+  }
+  
+  console.log(chalk.yellow('\n⏰ Build is taking longer than expected. You can check manually:'));
+  console.log(chalk.blue(`🔗 https://github.com/${owner}/${repo}/actions/runs/${runId}`));
+}
+
+async function downloadAPK(owner, repo, runId, ghCommand) {
+  try {
+    // Create downloads directory
+    await fs.ensureDir('downloads');
+    
+    // Download artifacts
+    const downloadPath = path.join(process.cwd(), 'downloads');
+    execSync(`${ghCommand} run download ${runId} --repo ${owner}/${repo} --dir "${downloadPath}"`, { 
+      stdio: 'pipe' 
+    });
+    
+    // Find and move APK file
+    const files = await fs.readdir(downloadPath);
+    let apkFile = null;
+    
+    // Look for APK files in subdirectories
+    for (const file of files) {
+      const filePath = path.join(downloadPath, file);
+      const stat = await fs.stat(filePath);
+      
+      if (stat.isDirectory()) {
+        const subFiles = await fs.readdir(filePath);
+        for (const subFile of subFiles) {
+          if (subFile.endsWith('.apk')) {
+            apkFile = path.join(filePath, subFile);
+            break;
+          }
+        }
+      } else if (file.endsWith('.apk')) {
+        apkFile = filePath;
+      }
+      
+      if (apkFile) break;
+    }
+    
+    if (apkFile) {
+      const finalApkPath = path.join(downloadPath, 'app-debug.apk');
+      await fs.copy(apkFile, finalApkPath);
+      console.log(chalk.green(`✅ APK downloaded: ${finalApkPath}`));
+    } else {
+      console.log(chalk.yellow('⚠️  APK file not found in artifacts'));
+    }
+    
+  } catch (error) {
+    throw new Error('Failed to download APK: ' + error.message);
   }
 }
 
