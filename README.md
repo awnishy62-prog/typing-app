@@ -106,8 +106,18 @@ git push origin main
 
 ### **Step 7: Download Your APK**
 ```bash
-# Check build status and download APK automatically
-web2apk getapp
+# Method 1: Using npm script
+npm run web2apk getapp
+
+# Method 2: Using batch file (Windows)
+web2apk.bat getapp
+
+# Method 3: Using shell script (Mac/Linux)
+chmod +x web2apk.sh
+./web2apk.sh getapp
+
+# Method 4: Direct node command
+node web2apk.js getapp
 
 # Or manually download from GitHub Actions
 # Go to Actions tab → Latest workflow → Download APK artifact
@@ -138,22 +148,35 @@ The `web2apk` command provides easy access to your APK builds:
 
 ### **Commands:**
 ```bash
-web2apk getapp     # Check build status and download APK
-web2apk config     # Show current APK configuration
-web2apk setup      # Run initial setup
-web2apk help       # Show help message
+# Windows
+web2apk.bat getapp     # Check build status and download APK
+web2apk.bat config     # Show current APK configuration
+web2apk.bat setup      # Run initial setup
+web2apk.bat help       # Show help message
+
+# Mac/Linux
+./web2apk.sh getapp    # Check build status and download APK
+./web2apk.sh config    # Show current APK configuration
+./web2apk.sh setup     # Run initial setup
+./web2apk.sh help      # Show help message
+
+# Or using npm
+npm run web2apk getapp # Check build status and download APK
+npm run web2apk config # Show current APK configuration
+npm run web2apk setup  # Run initial setup
+npm run web2apk help   # Show help message
 ```
 
 ### **Examples:**
 ```bash
 # Check if your latest build is ready and download it
-web2apk getapp
+npm run web2apk getapp
 
 # View your current app settings
-web2apk config
+npm run web2apk config
 
 # Run setup (if you haven't already)
-web2apk setup
+npm run web2apk setup
 ```
 
 ### **Features:**
