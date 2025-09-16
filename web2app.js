@@ -406,12 +406,33 @@ async function setupGitRepository() {
 }
 
 async function customizeAppSettings() {
-  console.log(chalk.blue('\n🎨 Let\'s customize your app!'));
+  console.log(chalk.blue('\n🎨 App Configuration'));
+  console.log(chalk.yellow('You can customize your app settings or use the default ones.'));
   
-  const appName = await askQuestion('Enter your app name (or press Enter for "My Web App"): ') || 'My Web App';
-  const appId = await askQuestion('Enter your app ID (or press Enter for "com.example.myapp"): ') || 'com.example.myapp';
-  const version = await askQuestion('Enter version (or press Enter for "1.0.0"): ') || '1.0.0';
-  const description = await askQuestion('Enter description (or press Enter for "My converted web app"): ') || 'My converted web app';
+  const customizeChoice = await askQuestion('Do you want to customize your app settings? (y/n): ');
+  
+  let appName, appId, version, description;
+  
+  if (customizeChoice.toLowerCase() === 'y' || customizeChoice.toLowerCase() === 'yes') {
+    console.log(chalk.blue('\n🎨 Let\'s customize your app!'));
+    
+    appName = await askQuestion('Enter your app name (or press Enter for "My Web App"): ') || 'My Web App';
+    appId = await askQuestion('Enter your app ID (or press Enter for "com.example.myapp"): ') || 'com.example.myapp';
+    version = await askQuestion('Enter version (or press Enter for "1.0.0"): ') || '1.0.0';
+    description = await askQuestion('Enter description (or press Enter for "My converted web app"): ') || 'My converted web app';
+    
+    console.log(chalk.green('✅ App customization completed!'));
+  } else {
+    console.log(chalk.blue('📱 Using default app settings...'));
+    
+    // Use default settings
+    appName = 'My Web App';
+    appId = 'com.example.myapp';
+    version = '1.0.0';
+    description = 'My converted web app';
+    
+    console.log(chalk.green('✅ Default app settings applied!'));
+  }
 
   // Create apk-config.json
   const config = {
@@ -557,7 +578,7 @@ async function pushToGitHub(ghCommand = null) {
 
 async function waitForBuildAndDownload() {
   console.log(chalk.blue('\n⏳ Waiting for your APK to be built...'));
-  console.log(chalk.yellow('This usually takes 5-15 minutes. We\'ll check every 30 seconds.'));
+  console.log(chalk.yellow('This usually takes 5-15 minutes. We\'ll check every 10 seconds.'));
   
   // Wait a bit for the workflow to start
   await new Promise(resolve => setTimeout(resolve, 10000));
@@ -623,19 +644,19 @@ async function getWorkflowStatus(owner, repo, ghCommand) {
 
 async function waitForBuildCompletion(owner, repo, runId, ghCommand) {
   console.log(chalk.yellow('\n🔄 Waiting for build to complete...'));
-  console.log(chalk.blue('⏱️  Checking every 30 seconds for updates...\n'));
+  console.log(chalk.blue('⏱️  Checking every 10 seconds for updates...\n'));
   
   let attempts = 0;
-  const maxAttempts = 60; // 30 minutes max wait time
+  const maxAttempts = 180; // 30 minutes max wait time (180 * 10 seconds)
   
   while (attempts < maxAttempts) {
     try {
-      // Wait 30 seconds before checking again
-      await new Promise(resolve => setTimeout(resolve, 30000));
+      // Wait 10 seconds before checking again
+      await new Promise(resolve => setTimeout(resolve, 10000));
       attempts++;
       
-      // Get current status
-      const output = execSync(`${ghCommand} run view ${runId} --repo ${owner}/${repo} --json status,conclusion`, { 
+      // Get current status with more detailed info
+      const output = execSync(`${ghCommand} run view ${runId} --repo ${owner}/${repo} --json status,conclusion,createdAt,updatedAt`, { 
         encoding: 'utf8',
         stdio: 'pipe'
       });
@@ -643,10 +664,17 @@ async function waitForBuildCompletion(owner, repo, runId, ghCommand) {
       const runData = JSON.parse(output);
       const status = runData.status;
       const conclusion = runData.conclusion;
+      const createdAt = new Date(runData.createdAt);
+      const updatedAt = new Date(runData.updatedAt);
       
-      // Show progress update
-      const progress = Math.min(attempts * 2, 95); // Simulate progress up to 95%
-      process.stdout.write(`\r${chalk.blue('📊 Progress:')} ${progress}% ${chalk.gray(`(Check ${attempts}/${maxAttempts})`)}`);
+      // Calculate real progress based on time elapsed
+      const now = new Date();
+      const elapsedMinutes = Math.floor((now - createdAt) / (1000 * 60));
+      const estimatedTotalMinutes = 15; // Average build time
+      const realProgress = Math.min(Math.floor((elapsedMinutes / estimatedTotalMinutes) * 100), 95);
+      
+      // Show real progress update
+      process.stdout.write(`\r${chalk.blue('📊 APK Build Progress:')} ${realProgress}% ${chalk.gray(`(${elapsedMinutes}min elapsed, Check ${attempts}/${maxAttempts})`)}`);
       
       if (status === 'completed') {
         console.log('\n'); // New line after progress
