@@ -86,6 +86,7 @@ jobs:
         
     - name: Create Release (on main branch)
       if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      continue-on-error: true
       uses: softprops/action-gh-release@v1
       with:
         files: app-debug.apk
