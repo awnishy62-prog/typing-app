@@ -73,7 +73,7 @@ async function getApp() {
       spinner.succeed(chalk.green('✅ Latest build completed successfully!'));
       
       // Download APK
-      await downloadAPK(owner, repoName, workflowStatus.runId);
+      await downloadAPK(owner, repoName, workflowStatus.runId, workflowStatus.ghCommand);
       
     } else if (workflowStatus.status === 'in_progress') {
       spinner.warn(chalk.yellow('⏳ Build is currently in progress...'));
@@ -97,6 +97,9 @@ async function getApp() {
 
 async function getWorkflowStatus(owner, repo) {
   try {
+    // Find GitHub CLI command
+    let ghCommand = 'gh';
+    
     // Check if GitHub CLI is installed
     try {
       execSync('gh --version', { stdio: 'pipe' });
@@ -113,6 +116,7 @@ async function getWorkflowStatus(owner, repo) {
       for (const path of possiblePaths) {
         try {
           execSync(`"${path}" --version`, { stdio: 'pipe' });
+          ghCommand = `"${path}"`;
           ghFound = true;
           break;
         } catch (e) {
@@ -131,13 +135,13 @@ async function getWorkflowStatus(owner, repo) {
 
     // Check if authenticated
     try {
-      execSync('gh auth status', { stdio: 'pipe' });
+      execSync(`${ghCommand} auth status`, { stdio: 'pipe' });
     } catch (authError) {
-      throw new Error('GitHub CLI is not authenticated. Please run:\ngh auth login');
+      throw new Error('GitHub CLI is not authenticated. Please run:\ngh auth login\nOr use: setup-gh-auth.bat');
     }
 
     // Use GitHub CLI to get workflow runs
-    const output = execSync(`gh run list --repo ${owner}/${repo} --limit 1 --json status,conclusion,number,url`, { 
+    const output = execSync(`${ghCommand} run list --repo ${owner}/${repo} --limit 1 --json status,conclusion,number,url`, { 
       encoding: 'utf8',
       stdio: 'pipe'
     });
@@ -154,7 +158,8 @@ async function getWorkflowStatus(owner, repo) {
       status: run.status,
       conclusion: run.conclusion,
       runId: runId,
-      progress: run.status === 'in_progress' ? Math.floor(Math.random() * 100) : 100
+      progress: run.status === 'in_progress' ? Math.floor(Math.random() * 100) : 100,
+      ghCommand: ghCommand
     };
     
   } catch (error) {
@@ -165,7 +170,7 @@ async function getWorkflowStatus(owner, repo) {
   }
 }
 
-async function downloadAPK(owner, repo, runId) {
+async function downloadAPK(owner, repo, runId, ghCommand = 'gh') {
   const spinner = ora('Downloading APK...').start();
   
   try {
@@ -174,7 +179,7 @@ async function downloadAPK(owner, repo, runId) {
     await fs.ensureDir(downloadsDir);
     
     // Download artifact using GitHub CLI
-    execSync(`gh run download ${runId} --repo ${owner}/${repo} --dir ${downloadsDir}`, { 
+    execSync(`${ghCommand} run download ${runId} --repo ${owner}/${repo} --dir ${downloadsDir}`, { 
       stdio: 'pipe' 
     });
     
