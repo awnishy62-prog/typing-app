@@ -104,16 +104,17 @@ async function prepareWebsiteFiles() {
   
   // Copy website files to dist
   if (indexFile === 'index.html') {
-    // Copy all files except node_modules, dist, android, .git
-    const files = await fs.readdir('.');
-    for (const file of files) {
-      if (!['node_modules', 'dist', 'android', '.git', 'package-lock.json', 'yarn.lock'].includes(file)) {
-        const stat = await fs.stat(file);
-        if (stat.isDirectory()) {
-          await fs.copy(file, `dist/${file}`);
-        } else {
-          await fs.copy(file, `dist/${file}`);
-        }
+    // Ensure dist directory is clean
+    if (await fs.pathExists('dist')) {
+      await fs.remove('dist');
+    }
+    await fs.ensureDir('dist');
+    
+    // Copy individual website files
+    const filesToCopy = ['index.html', 'style.css', 'script.js', 'manifest.json', 'sw.js'];
+    for (const file of filesToCopy) {
+      if (await fs.pathExists(file)) {
+        await fs.copy(file, `dist/${file}`);
       }
     }
   } else {

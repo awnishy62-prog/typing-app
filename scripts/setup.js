@@ -23,12 +23,19 @@ async function setup() {
     
     // Copy website files to dist if they exist in root
     if (hasIndexHtml) {
-      await fs.copy('.', 'dist', {
-        filter: (src) => {
-          const basename = require('path').basename(src);
-          return !['node_modules', 'dist', 'android', '.git', 'package-lock.json'].includes(basename);
+      // First, ensure dist directory is clean
+      if (await fs.pathExists('dist')) {
+        await fs.remove('dist');
+      }
+      await fs.ensureDir('dist');
+      
+      // Copy individual files instead of the entire directory
+      const filesToCopy = ['index.html', 'style.css', 'script.js', 'manifest.json', 'sw.js'];
+      for (const file of filesToCopy) {
+        if (await fs.pathExists(file)) {
+          await fs.copy(file, `dist/${file}`);
         }
-      });
+      }
     }
     
     // Initialize Capacitor
