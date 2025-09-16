@@ -50,7 +50,7 @@ async function fullyAutomatedSetup() {
     await checkProjectStructure();
 
     // Step 2: Check GitHub CLI
-    await checkAndSetupGitHubCLI();
+    const ghCommand = await checkAndSetupGitHubCLI();
 
     // Step 3: Get user's website files
     await getWebsiteFiles();
@@ -62,7 +62,7 @@ async function fullyAutomatedSetup() {
     await customizeAppSettings();
 
     // Step 6: Push to GitHub
-    await pushToGitHub();
+    await pushToGitHub(ghCommand);
 
     // Step 7: Wait for build and download APK
     await waitForBuildAndDownload();
@@ -108,18 +108,21 @@ async function checkAndSetupGitHubCLI() {
   try {
     // Check if GitHub CLI is installed
     let ghCommand = 'gh';
+    let ghFound = false;
+    
     try {
       execSync('gh --version', { stdio: 'pipe' });
+      ghFound = true;
     } catch (ghError) {
       // Check common installation paths
       const possiblePaths = [
         'C:\\Program Files\\GitHub CLI\\gh.exe',
         'C:\\Program Files (x86)\\GitHub CLI\\gh.exe',
+        'C:\\Users\\' + process.env.USERNAME + '\\AppData\\Local\\Programs\\GitHub CLI\\gh.exe',
         '/usr/local/bin/gh',
         '/usr/bin/gh'
       ];
       
-      let ghFound = false;
       for (const path of possiblePaths) {
         try {
           execSync(`"${path}" --version`, { stdio: 'pipe' });
@@ -130,17 +133,41 @@ async function checkAndSetupGitHubCLI() {
           // Continue checking other paths
         }
       }
+    }
+    
+    if (!ghFound) {
+      spinner.fail(chalk.red('❌ GitHub CLI not found'));
+      console.log(chalk.yellow('🔧 Let\'s install GitHub CLI first!'));
       
-      if (!ghFound) {
-        spinner.fail(chalk.red('❌ GitHub CLI not found'));
-        console.log(chalk.yellow('🔧 Let\'s install GitHub CLI first!'));
-        
-        const installChoice = await askQuestion('Do you want to install GitHub CLI now? (y/n): ');
-        if (installChoice.toLowerCase() === 'y' || installChoice.toLowerCase() === 'yes') {
-          await installGitHubCLI();
-        } else {
-          throw new Error('GitHub CLI is required. Please install it manually and try again.');
+      const installChoice = await askQuestion('Do you want to install GitHub CLI now? (y/n): ');
+      if (installChoice.toLowerCase() === 'y' || installChoice.toLowerCase() === 'yes') {
+        await installGitHubCLI();
+        // After installation, try to find gh command again
+        try {
+          execSync('gh --version', { stdio: 'pipe' });
+          ghCommand = 'gh';
+          ghFound = true;
+        } catch (e) {
+          // Check paths again after installation
+          const possiblePaths = [
+            'C:\\Program Files\\GitHub CLI\\gh.exe',
+            'C:\\Program Files (x86)\\GitHub CLI\\gh.exe',
+            'C:\\Users\\' + process.env.USERNAME + '\\AppData\\Local\\Programs\\GitHub CLI\\gh.exe'
+          ];
+          
+          for (const path of possiblePaths) {
+            try {
+              execSync(`"${path}" --version`, { stdio: 'pipe' });
+              ghCommand = `"${path}"`;
+              ghFound = true;
+              break;
+            } catch (e2) {
+              // Continue checking other paths
+            }
+          }
         }
+      } else {
+        throw new Error('GitHub CLI is required. Please install it manually and try again.');
       }
     }
 
@@ -159,6 +186,8 @@ async function checkAndSetupGitHubCLI() {
         throw new Error('GitHub authentication is required. Please run "gh auth login" and try again.');
       }
     }
+
+    return ghCommand; // Return the ghCommand for use in other functions
 
   } catch (error) {
     spinner.fail(chalk.red('❌ ' + error.message));
@@ -237,20 +266,65 @@ async function getWebsiteFiles() {
 
 async function addCustomWebsite() {
   console.log(chalk.blue('\n📂 Adding your custom website...'));
-  
-  const websitePath = await askQuestion('Enter the path to your website folder: ');
+  console.log(chalk.yellow('💡 We\'ll look for your website files in the parent directory.'));
+  console.log(chalk.yellow('   If you have files like index.html, style.css, script.js in the parent folder, we\'ll copy them!'));
   
   try {
-    if (await fs.pathExists(websitePath)) {
+    // Check parent directory for common website files
+    const parentDir = path.join(process.cwd(), '..');
+    const commonFiles = ['index.html', 'style.css', 'script.js', 'app.js', 'main.js', 'styles.css'];
+    
+    let foundFiles = [];
+    for (const file of commonFiles) {
+      const filePath = path.join(parentDir, file);
+      if (await fs.pathExists(filePath)) {
+        foundFiles.push(file);
+      }
+    }
+    
+    if (foundFiles.length > 0) {
+      console.log(chalk.green(`✅ Found website files: ${foundFiles.join(', ')}`));
+      
       // Clear www directory first
       await fs.emptyDir('www');
       
-      // Copy files
-      await fs.copy(websitePath, 'www');
+      // Copy found files
+      for (const file of foundFiles) {
+        const sourcePath = path.join(parentDir, file);
+        const destPath = path.join('www', file);
+        await fs.copy(sourcePath, destPath);
+      }
+      
+      // Also copy any other HTML, CSS, JS files
+      const allFiles = await fs.readdir(parentDir);
+      for (const file of allFiles) {
+        const filePath = path.join(parentDir, file);
+        const stat = await fs.stat(filePath);
+        
+        if (stat.isFile() && (file.endsWith('.html') || file.endsWith('.css') || file.endsWith('.js'))) {
+          const destPath = path.join('www', file);
+          if (!await fs.pathExists(destPath)) { // Don't overwrite already copied files
+            await fs.copy(filePath, destPath);
+          }
+        }
+      }
+      
       console.log(chalk.green('✅ Website files copied successfully!'));
     } else {
-      console.log(chalk.red('❌ Path not found. Please check the path and try again.'));
-      throw new Error('Website path not found');
+      // Ask for manual path if no files found
+      const websitePath = await askQuestion('No website files found in parent directory. Enter the path to your website folder: ');
+      
+      if (await fs.pathExists(websitePath)) {
+        // Clear www directory first
+        await fs.emptyDir('www');
+        
+        // Copy files
+        await fs.copy(websitePath, 'www');
+        console.log(chalk.green('✅ Website files copied successfully!'));
+      } else {
+        console.log(chalk.red('❌ Path not found. Please check the path and try again.'));
+        throw new Error('Website path not found');
+      }
     }
   } catch (error) {
     console.log(chalk.red('❌ Failed to copy website files: ' + error.message));
@@ -314,7 +388,7 @@ async function customizeAppSettings() {
   console.log(chalk.green('✅ App configuration saved!'));
 }
 
-async function pushToGitHub() {
+async function pushToGitHub(ghCommand = 'gh') {
   console.log(chalk.blue('\n🚀 Pushing to GitHub...'));
   
   const spinner = ora('Adding files to Git...').start();
