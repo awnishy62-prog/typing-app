@@ -28,12 +28,14 @@ async function main() {
   const command = args[0];
 
   switch (command) {
-    case 'enter':
-      await fullyAutomatedSetup();
-      break;
     case 'help':
-    default:
       showHelp();
+      break;
+    case 'enter':
+    case undefined:
+    default:
+      // If no command or 'enter' command, run the fully automated setup
+      await fullyAutomatedSetup();
       break;
   }
 }
@@ -359,10 +361,10 @@ function showHelp() {
   console.log(chalk.blue('🚀 Web2App - Fully Automated Website to Android App Converter'));
   console.log('');
   console.log(chalk.green('Commands:'));
-  console.log('  web2app enter     - Start fully automated setup');
+  console.log('  web2app           - Start fully automated setup (default)');
   console.log('  web2app help      - Show this help message');
   console.log('');
-  console.log(chalk.blue('What web2app enter does:'));
+  console.log(chalk.blue('What web2app does automatically:'));
   console.log('1. ✅ Checks your project structure');
   console.log('2. 🔧 Sets up GitHub CLI (installs if needed)');
   console.log('3. 🔐 Authenticates with GitHub');

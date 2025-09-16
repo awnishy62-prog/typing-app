@@ -44,10 +44,17 @@ git clone https://github.com/AshishY794/web2appA.git
 cd web2appA
 
 # Step 2: Enter the magic world!
-web2app enter
+# Windows:
+.\web2app.bat
+
+# Mac/Linux:
+./web2app.sh
+
+# Or everyone can use:
+npm run web2app
 ```
 
-**What `web2app enter` does automatically:**
+**What `web2app` does automatically:**
 - ✅ Checks your project structure
 - ✅ Installs GitHub CLI if needed
 - ✅ Logs you into GitHub
@@ -183,16 +190,16 @@ npm run web2apk getapp
 This is the **NEW** super easy command that does everything for you:
 
 ```bash
-# Windows Users
-web2app.bat enter      # Start fully automated setup
-web2app.bat help       # Get help
+# Windows Users (PowerShell/Command Prompt)
+.\web2app.bat          # Start fully automated setup
+.\web2app.bat help     # Get help
 
 # Mac/Linux Users
-./web2app.sh enter     # Start fully automated setup
+./web2app.sh           # Start fully automated setup
 ./web2app.sh help      # Get help
 
 # Everyone can also use:
-npm run web2app enter  # Start fully automated setup
+npm run web2app        # Start fully automated setup
 npm run web2app help   # Get help
 ```
 
@@ -201,11 +208,11 @@ npm run web2app help   # Get help
 This command is for when you want to manage your app after it's built:
 
 ```bash
-# Windows Users
-web2apk.bat getapp     # Get your app when it's ready
-web2apk.bat config     # See your app settings
-web2apk.bat setup      # Set everything up
-web2apk.bat help       # Get help
+# Windows Users (PowerShell/Command Prompt)
+.\web2apk.bat getapp   # Get your app when it's ready
+.\web2apk.bat config   # See your app settings
+.\web2apk.bat setup    # Set everything up
+.\web2apk.bat help     # Get help
 
 # Mac/Linux Users
 ./web2apk.sh getapp    # Get your app when it's ready
@@ -222,9 +229,9 @@ npm run web2apk help   # Get help
 
 ### **What Each Command Does:**
 
-#### **`web2app enter` - The Ultimate Magic Command** ✨
+#### **`web2app` - The Ultimate Magic Command** ✨
 ```bash
-web2app enter
+web2app
 ```
 
 **This is what you'll see:**
@@ -556,6 +563,29 @@ git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPO_NAME.git
 # Push to GitHub
 git push origin main
 ```
+
+### **Problem 9: "web2app command not found"** ❌
+
+**What you see:**
+```
+web2app : The term 'web2app' is not recognized as the name of a cmdlet, function, script file, or operable program.
+```
+
+**Solution:** Use the correct syntax for your system! 💻
+
+**Fix:**
+```bash
+# Windows PowerShell/Command Prompt (use .\ before the command)
+.\web2app.bat
+
+# Mac/Linux (use ./ before the command)
+./web2app.sh
+
+# Or everyone can use npm (no .\ or ./ needed)
+npm run web2app
+```
+
+**Why this happens:** Windows PowerShell doesn't run scripts from the current directory by default for security reasons.
 
 ## 🎨 Making Your App Look Amazing
 
