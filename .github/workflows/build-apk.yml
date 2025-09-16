@@ -86,28 +86,24 @@ jobs:
         
     - name: Create Release (on main branch)
       if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-      continue-on-error: true
-      uses: softprops/action-gh-release@v1
-      with:
-        files: app-debug.apk
-        tag_name: v${{ github.run_number }}
-        name: Release v${{ github.run_number }}
-        body: |
-          🚀 **Automated APK Build**
+      run: |
+        # Create release using GitHub CLI
+        gh release create "v${{ github.run_number }}" app-debug.apk \
+          --title "Release v${{ github.run_number }}" \
+          --notes "🚀 **Automated APK Build**
           
           This release contains the latest APK build from commit ${{ github.sha }}
           
           **Installation:**
-          1. Download the `app-debug.apk` file
-          2. Enable "Install from unknown sources" on your Android device
+          1. Download the \`app-debug.apk\` file
+          2. Enable \"Install from unknown sources\" on your Android device
           3. Install the APK file
           
           **Build Details:**
           - Commit: ${{ github.sha }}
           - Branch: ${{ github.ref_name }}
           - Build Number: ${{ github.run_number }}
-          - Build Date: ${{ github.event.head_commit.timestamp }}
-        draft: false
-        prerelease: false
+          - Build Date: ${{ github.event.head_commit.timestamp }}" \
+          --latest
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
