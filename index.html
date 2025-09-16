@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web2App Converter - Example</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#667eea">
+    <meta name="description" content="Convert your website to Android APK with Web2App Converter">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <div class="logo-icon">🚀</div>
+                <h1>Web2App Converter</h1>
+            </div>
+            <p class="tagline">Transform your website into a native Android app</p>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Hero Section -->
+            <section class="hero">
+                <h2>Welcome to Web2App!</h2>
+                <p>This is an example website that demonstrates how easy it is to convert your HTML/CSS/JavaScript projects into native Android APK files. Simply replace this content with your own website files and run the build command!</p>
+            </section>
+
+            <!-- Features Grid -->
+            <section class="features">
+                <div class="feature-card">
+                    <div class="feature-icon">⚡</div>
+                    <h3>One Command Build</h3>
+                    <p>Convert your website to APK with just one command: <code>npm run buildapk</code></p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📱</div>
+                    <h3>Native Performance</h3>
+                    <p>Uses Capacitor for optimal mobile performance and native app features</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🎨</div>
+                    <h3>Beautiful UI</h3>
+                    <p>Modern, responsive design that works perfectly on all devices</p>
+                </div>
+            </section>
+
+            <!-- Interactive Demo -->
+            <section class="interactive-demo">
+                <h3>Interactive Demo</h3>
+                <div class="demo-buttons">
+                    <button class="btn btn-primary" onclick="showNotification()">Show Notification</button>
+                    <button class="btn btn-secondary" onclick="changeTheme()">Change Theme</button>
+                    <button class="btn btn-accent" onclick="animateCards()">Animate Cards</button>
+                </div>
+                <div class="demo-output" id="demoOutput">
+                    <p>Click the buttons above to see interactive features in action!</p>
+                </div>
+            </section>
+
+            <!-- Getting Started -->
+            <section class="getting-started">
+                <h3>Getting Started</h3>
+                <div class="steps">
+                    <div class="step">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h4>Add Your Website Files</h4>
+                            <p>Place your <code>index.html</code>, <code>style.css</code>, and <code>script.js</code> files in the project root</p>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h4>Run Setup</h4>
+                            <p>Execute <code>npm run setup</code> to initialize Capacitor and Android platform</p>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h4>Build APK</h4>
+                            <p>Run <code>npm run buildapk</code> to generate your Android APK file</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>Made with ❤️ for the web development community</p>
+            <p>Convert your websites to apps in minutes, not hours!</p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
